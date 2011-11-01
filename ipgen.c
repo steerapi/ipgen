@@ -27,22 +27,25 @@
 
  gcc ipgen.c -o ipgen -O3
 
- Description :
-
- 20 bytes for ip header | 4 bytes for seq | 94 bytes for Data | 2 bytes for checksum
+ Description:
 
  A simple  RAW IP TRAFFIC GENERATOR (require sudo)
  Evaluate % of successful packets compared to transmitted packets
- Usage: ./ipgen [-v] -[s|c] [-n NUM_PACKET] [-l PACKET_LENGTH_IN_BYTES] [-b BANDWIDTH_IN_BYTES_PER_SEC] IPADDRESS PORT
--v means verbose
- e.g.
- ./ipgen -vcl 1000 -b 10000 127.0.0.1 5556
- ./ipgen -vsl 1000 127.0.0.1 5556
 
  There are two types of unsuccessful packages
  1. Loss or drop by lower layers.
  2. Fail the checksum.
  This program counts both losses.
+
+ Packet structure:
+ 20 bytes for ip header | 4 bytes for seq | n bytes for Data | 2 bytes for checksum
+
+ Usage: ./ipgen [-v] -[s|c] [-n NUM_PACKET] [-l PACKET_LENGTH_IN_BYTES] [-b BANDWIDTH_IN_BYTES_PER_SEC] IPADDRESS PORT
+ -v means verbose
+
+ e.g.
+ ./ipgen -vcl 1000 -b 10000 127.0.0.1 5556
+ ./ipgen -vsl 1000 127.0.0.1 5556
 
  TODO:
  -Add high accuracy timer.
@@ -110,7 +113,8 @@ void print_summary() {
 	int drop = max - successPkg - numfailchecksum;
 	printf("PERCENT DROP: %d/%d = %.2f %%\n", drop, max, 100.0 * drop / max);
 	time_t elapsed_time = time(NULL) - seconds;
-	printf("THROUGHPUT %0.2f BYTES/SEC\n", 1.0 * total_bytes_recv / elapsed_time);
+	printf("THROUGHPUT %0.2f BYTES/SEC\n",
+			1.0 * total_bytes_recv / elapsed_time);
 }
 
 void sighandler(int sig) {
@@ -279,7 +283,9 @@ int main(int argc, // Number of strings in array argv
 			*sum = csum((unsigned short *) buffer, size);
 			*sum = htons(*sum);
 			if (verbose) {
-				printf("SENDING PACKET SEQ#[%d] LENGTH [%d] BYTES BANDWIDTH [%f] BYTES/SEC\n", num, plen, bw);
+				printf(
+						"SENDING PACKET SEQ#[%d] LENGTH [%d] BYTES BANDWIDTH [%f] BYTES/SEC\n",
+						num, plen, bw);
 			}
 			bytes_sent = sendto(sock, buffertotal, total, 0,
 					(struct sockaddr*) &sa, sizeof sa);
@@ -334,7 +340,7 @@ int main(int argc, // Number of strings in array argv
 			uint16_t checksum = csum((unsigned short *) buffer, size);
 			int seq = *(int*) buffer;
 			seq = ntohl(seq);
-			if(seq==0xffffffff){
+			if (seq == 0xffffffff) {
 				print_summary();
 				exit(EXIT_SUCCESS);
 			}
@@ -348,17 +354,16 @@ int main(int argc, // Number of strings in array argv
 			} else {
 				numfailchecksum++;
 				check = "FAILED";
-//				if (verbose) {
-//					printf("CHECKSUM: %d\n", checksum);
-//					printf("CONTENT: ");
-//					for (i = 0; i < recsize - ipheader_size; ++i) {
-//						printf("%c", (char) *(buffer + 4 + i));
-//					}
-//					printf("\n");
-//				}
+				//				if (verbose) {
+				//					printf("CHECKSUM: %d\n", checksum);
+				//					printf("CONTENT: ");
+				//					for (i = 0; i < recsize - ipheader_size; ++i) {
+				//						printf("%c", (char) *(buffer + 4 + i));
+				//					}
+				//					printf("\n");
+				//				}
 			}
 			totalPkg++;
-			//			max = totalPkg;
 			max = totalPkg > max_seq ? totalPkg : max_seq;
 			if (verbose) {
 				time_t elapsed_time = time(NULL) - seconds;
@@ -366,11 +371,11 @@ int main(int argc, // Number of strings in array argv
 						"%s RECEIVED SEQ#[%d] LENGTH [%d] BYTES [%d/%d] PACKETS THROUGHPUT [%f] BYTES/SEC\n",
 						check, seq, recsize, successPkg, max,
 						1.0 * total_bytes_recv / elapsed_time);
-//				printf("CONTENT: ");
-//				for (i = 0; i < recsize - ipheader_size; ++i) {
-//					printf("%c", (char) *(buffer + 4 + i));
-//				}
-//				printf("\n");
+				//				printf("CONTENT: ");
+				//				for (i = 0; i < recsize - ipheader_size; ++i) {
+				//					printf("%c", (char) *(buffer + 4 + i));
+				//				}
+				//				printf("\n");
 			}
 			recsize = 0;
 		}
