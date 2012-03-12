@@ -237,7 +237,7 @@ int main(int argc, // Number of strings in array argv
 	sa.sin_family = AF_INET;
 	//sa.sin_addr.s_addr = inet_addr(ipaddr);
 	inet_pton(AF_INET, ipaddr, &(sa.sin_addr.s_addr));
-	sa.sin_port = htons(port);
+	//sa.sin_port = htons(port);
 
 	//Setup interupt signal
 	signal(SIGABRT, &sighandler);
